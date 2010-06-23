@@ -9,6 +9,9 @@
 #include <unistd.h>
 #include <IOKit/IOKitLib.h>
 
+//workaround for incomplete patches - because i'm lazy =)
+bool g_breakhash = false;
+
 io_service_t get_io_service(const char *name) {
 	CFMutableDictionaryRef matching;
 	io_service_t service;
@@ -55,6 +58,23 @@ int img3_flash_NOR_image(io_connect_t norServiceConnection, const char* filename
 		return err;
 	}
 	
+	if (g_breakhash && !isLLB) {
+		const size_t patchOff = 0x30;
+		size_t chunk_size = PAGE_SIZE * 2 - 4 - patchOff;
+		if (imgLen < chunk_size * 2) { 
+			chunk_size = imgLen / 2;
+		}
+		char *chunkEnd = (char*)mappedImage + ((imgLen - 4 - patchOff) & ~3);
+		char *chunkStart = chunkEnd - chunk_size;
+		for (char* pCh = chunkEnd; pCh > chunkStart; pCh -= 4) {
+			if (*(uint32_t*)pCh = 'SHSH') {
+				pCh[patchOff]++; 
+				printf("[INFO] breakHash(%s) at 0x%X\n", filename, pCh - (char*)mappedImage);
+				break;
+			}
+		}
+	}
+	
 	kern_return_t result;
 	if((result = IOConnectCallStructMethod(norServiceConnection, isLLB ? 0 : 1, mappedImage, imgLen, NULL, 0)) != KERN_SUCCESS) {
 		printf("IOConnectCallStructMethod failed: 0x%x\n", result);
@@ -68,7 +88,7 @@ int img3_flash_NOR_image(io_connect_t norServiceConnection, const char* filename
 
 int main(int argc, const char **argv) {
 	if (argc == 1) {
-		printf("Usage: %s LLB.img3 [iboot.img3 [devicetree.img3 [...]]]\n", *argv);
+		printf("Usage: %s [-b] LLB.img3 [iboot.img3 [devicetree.img3 [...]]]\n", *argv);
 		exit(0);
 	}
 	mach_port_t     masterPort;
@@ -96,6 +116,12 @@ int main(int argc, const char **argv) {
 	}
 	printf("[OK] IOServiceOpen: conn = 0x%x\n", norServiceConnection);
 
+	if (strcasecmp(argv[1], "-b") == 0) {
+		--argc;
+		++argv;
+		g_breakhash = true;
+	}
+	
 	for (int i = 1; i < argc; ++i) {
 		const char* filename = argv[i];
 
