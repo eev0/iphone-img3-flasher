@@ -39,19 +39,19 @@ int img3_flash_NOR_image(io_connect_t norServiceConnection, const char* filename
 	
 	int fd = open(filename, O_RDONLY);
 	size_t imgLen = lseek(fd, 0, SEEK_END);
-	printf("imgLen=%u\n", imgLen);
+	printf("imgLen=%lu\n", imgLen);
 	lseek(fd, 0, SEEK_SET);
 	void *mappedImage = mmap(NULL, imgLen, PROT_READ | PROT_WRITE, MAP_ANON | VM_FLAGS_PURGABLE, -1, 0);
 	if(mappedImage == MAP_FAILED) {
 		int err = errno;
-		printf("mmap (size = %d) failed: %s\n", imgLen, strerror(err));
+		printf("mmap (size = %ld) failed: %s\n", imgLen, strerror(err));
 		return err;
 	}
 	
 	int cbRead = read(fd, mappedImage, imgLen);
 	if (cbRead != imgLen) {
 		int err = errno;
-		printf("cbRead(%u) != imgLen(%u); err 0x%x\n", cbRead, imgLen, err);
+		printf("cbRead(%u) != imgLen(%lu); err 0x%x\n", cbRead, imgLen, err);
 		return err;
 	}
 	
