@@ -1,0 +1,8 @@
+//
+// Prefix header for all source files of the 'img3flash' target in the 'img3flash' project
+//
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+    #import <UIKit/UIKit.h>
+#endif
