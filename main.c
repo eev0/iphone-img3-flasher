@@ -124,6 +124,17 @@ int main(int argc, const char **argv) {
 	
 	for (int i = 1; i < argc; ++i) {
 		const char* filename = argv[i];
+		int fd = open(filename, O_RDONLY);
+		if (fd < 0) {
+			printf("[FAIL] File not found: '%s', ABORTING!\n", filename);			
+			return 42;
+		} else {
+			close(fd);
+		}
+	}
+	
+	for (int i = 1; i < argc; ++i) {
+		const char* filename = argv[i];
 
 		bool isLLB = !!strcasestr(filename, "llb");
 		int result = img3_flash_NOR_image(norServiceConnection, filename, isLLB);
@@ -133,6 +144,7 @@ int main(int argc, const char **argv) {
 		}
 		printf("[OK] Flashing %s\n", filename);
 	}
+		
 	IOServiceClose(norServiceConnection);
 	IOObjectRelease(norService);
 	printf("[OK] SUCCESS\n", norServiceConnection);
